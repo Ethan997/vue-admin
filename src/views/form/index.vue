@@ -6,7 +6,7 @@
   <el-input placeholder="请输入内容" clearable class="searchInput"> </el-input>
   <el-button type="primary" size="medium" class="searchBtn" ><i class="el-icon-search"></i>搜索</el-button>
   <el-button type="primary" size="medium" class="addBtn" @click="dialogVisible = true"><i class="el-icon-edit"></i>添加</el-button>
-  <el-button type="primary" size="medium" class="addBtn" ><i class="el-icon-download"></i>导出表格</el-button>
+  <el-button type="primary" size="medium" class="addBtn" @click="downloadTable" ><i class="el-icon-download"></i>导出表格</el-button>
   
   <el-table class="elTable"
     :data="tableData"
@@ -24,7 +24,7 @@
     <el-table-column
       fixed="left"
       prop="indentId"
-      label="定单编号"
+      label="订单编号"
       width="230">
     </el-table-column>
     <el-table-column
@@ -108,9 +108,7 @@
 </template>
 
 <script>
-
   export default {
-
     methods: {
       objectSpanMethod({ row, column, rowIndex, columnIndex }) {
         if (columnIndex === 7) { //第几列
@@ -150,6 +148,44 @@
       },
       resetForm(formName) {
         this.$refs[formName].resetFields();
+      },
+      getArray() {
+        if(this.number === 1) {
+          const dataSort = ['id','indentId','materialsId','ProductName','type','number','require','tableNumber']
+          const dataName = ['序号','订单编号','物料编码','产品名称','规格型号','订单数量','表号要求','配件及其他要求']
+          let start = 0;
+          let final = 8;
+          for(let j=0;j<this.tableData.length;j++) { //6次
+            for(let i=0;i<dataSort.length;i++) { //8次
+              let name = dataSort[i]
+                this.sum_in.push(this.tableData[j][name])
+            }
+            let group = this.sum_in.slice(start,final)
+            start+=8;
+            final+=8;
+            this.sum_out.push(group)
+          }
+          this.sum_out.unshift(dataName)       
+          return  this.sum_out
+        }else{
+          return  this.sum_out   
+        }
+      },
+      downloadTable() {
+          const rows = this.getArray();
+          let csvContent = "data:text/csv;charset=utf-8,";
+          rows.forEach(function(rowArray){
+            let row = rowArray.join(",");
+            csvContent += row + "\r\n";
+          }); 
+          var encodedUri = encodeURI(csvContent);
+          var link = document.createElement("a");
+          let mydate = new Date().toLocaleString();
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", "生产计划执行单"+" "+mydate+".csv");
+          document.body.appendChild(link); 
+          link.click();
+          this.number++
       }
     },
     data() {
@@ -181,6 +217,9 @@
         }
       };
       return {
+        number: 1,
+        sum_in: [],
+        sum_out: [],
         windowHeight: 700,
         block:[],
         tableData: [{
